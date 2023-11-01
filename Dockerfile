@@ -12,29 +12,42 @@ LABEL org.opencontainers.image.authors="Brinth Khanna"
 LABEL org.opencontainers.image.licenses="Apache 2.0"
 
 #Arguments
-ARG AVR_GCC_DIR=/opt/avr_gcc/
+ARG AVR_GCC_DIR=/opt/avr_gcc
 ARG AVR_GCC_TOOLCHAIN_REMOTE=https://ww1.microchip.com/downloads/aemDocuments/documents/DEV/ProductDocuments/SoftwareTools/avr8-gnu-toolchain-3.7.0.1796-linux.any.x86_64.tar.gz
 ARG AVR_GCC_TOOLCHAIN_DIR=$AVR_GCC_DIR/avr8-gcc-3.7.0
+ARG SIMUL_AVR_ENABLE=false
+ARG LIBSIM_REMOTE=http://download.savannah.nongnu.org/releases/simulavr/libsim_1.1.0_amd64.deb
+ARG SIMUL_AVR_REMOTE=http://download.savannah.nongnu.org/releases/simulavr/simulavr-vpi_1.1.0_amd64.deb
+ARG SIMUL_AVR_DIR=$AVR_GCC_DIR/simul-avr-1.0.0
 
-# Install Prerequisites
+#Install Prerequisites
 RUN apt-get update -y
-RUN apt-get install -y make libncurses-dev flex bison gperf curl
+RUN apt-get install -y make libncurses-dev binutils flex bison gperf curl
 
 #Download Toolchain and install
 RUN curl -L -o /tmp/avr8-gcc-3.7.0.tar.gz ${AVR_GCC_TOOLCHAIN_REMOTE}
-RUN mkdir -p $AVR_GCC_TOOLCHAIN_DIR
-WORKDIR $AVR_GCC_TOOLCHAIN_DIR
-
+RUN mkdir -p $AVR_GCC_TOOLCHAIN_DIR 
+WORKDIR $AVR_GCC_TOOLCHAIN_DIR 
 RUN tar -xvf /tmp/avr8-gcc-3.7.0.tar.gz --strip-components 1
 
-# Export Toolchain path to ENV
-ENV PATH="${PATH}:${AVR_GCC_TOOLCHAIN_DIR}/bin"
+#Download simavr and install
+RUN if [ "$SIMUL_AVR_ENABLE" = "true" ]; then \
+curl -Lv -o /tmp/libsim-avr-1.1.0.deb ${LIBSIM_REMOTE} && dpkg -i /tmp/libsim-avr-1.1.0.deb; \
+curl -Lv -o /tmp/simul-avr-1.1.0.deb ${SIMUL_AVR_REMOTE} && dpkg -i /tmp/simul-avr-1.1.0.deb; \
+fi
 
-#Install Programmer
-RUN apt-get install -y avrdude
+#Export Toolchain path to ENV
+ENV PATH="${PATH}:${AVR_GCC_TOOLCHAIN_DIR}/bin"
+ENV PATH="${PATH}:${SIMUL_AVR_DIR}/install/bin"
+
+#Install Binutils, Programmer & GDB
+RUN apt-get install -y avrdude gdb-avr
+WORKDIR $AVR_GCC_DIR
 
 #Cleanup Download
 RUN rm -rf /tmp/avr8-gcc-3.7.0.tar.gz
+RUN rm -rf /tmp/libsim-avr-1.1.0.deb
+RUN rm -rf /tmp/simul-avr-1.1.0.deb
 
 
 
