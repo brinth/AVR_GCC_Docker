@@ -32,12 +32,11 @@ Replace `<image name>` with any readable name
 ```bash
 docker run -it --rm -v $PWD:/project -w /project <image name>  make
 ```
-
 ---
 ### Flashing AVR GCC Project
 Run Command
 ```bash
-docker run -it --rm --privileged -v $PWD:/project -v <local device file>:/dev/ttyUSB0 -w /project <image name> avrdude <args> 
+docker run -it --rm -v $PWD:/project -v --device <local device file>:<container device file> -w /project <image name> make flash 
 ```
 Replace `<local device file>` with the enumerated device file name like `/dev/ttyUSB0`
 
